@@ -8,6 +8,7 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout, TimeDistributed
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten
 from tensorflow.keras.layers import Reshape
+import matplotlib.pyplot as plt
 
 def get_dataset_name(filename_with_dir):
     filename_without_dir = filename_with_dir.split('/')[-1]
@@ -102,3 +103,29 @@ cnn_rnn_model = create_cnn_rnn_model(input_shape_cnn, num_task_types=4)
 cnn_rnn_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 history = cnn_rnn_model.fit(X_intra_train_reshaped, y_intra_train, epochs=10, batch_size=32, validation_data=(X_intra_test_reshaped, y_intra_test))
+
+final_train_accuracy = history.history['accuracy'][-1]
+final_val_accuracy = history.history['val_accuracy'][-1]
+print(f"Final Training Accuracy: {final_train_accuracy * 100:.2f}%")
+print(f"Final Validation Accuracy: {final_val_accuracy * 100:.2f}%")
+
+# Plotting training and validation loss
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+
+# Plotting training and validation accuracy
+plt.subplot(1, 2, 2)
+plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+
+plt.show()
