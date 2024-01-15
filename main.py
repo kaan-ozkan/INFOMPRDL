@@ -35,7 +35,7 @@ def load_data(folder_path):
         if file_name.endswith('.h5'):
             file_path = os.path.join(folder_path, file_name)
             matrix = read_data(file_path)
-            matrix = signal.resample(matrix, 1000, axis=1)  # downsampling
+            matrix = signal.decimate(matrix, 4, axis=1)  # downsampling
             parts = file_name.split('.')
             label = parts[0].split('_')[-3]
             data.append(matrix)
