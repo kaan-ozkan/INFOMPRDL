@@ -48,7 +48,7 @@ def load_data(folder_path):
     data = scaler.fit_transform(data.reshape(-1, data.shape[-1])).reshape(data.shape)
     return data, labels
 
-
+'''
 def create_cnn_rnn_model(input_shape, num_task_types):
     model = Sequential()
 
@@ -126,3 +126,149 @@ plt.ylabel('Accuracy')
 plt.legend()
 
 plt.show()
+'''
+
+def create_cnn_model(input_shape, num_task_types):
+    model = Sequential()
+    #CNN
+    model.add(Conv2D(32, (3, 3), activation='relu', input_shape=input_shape))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Flatten())
+    model.add(Dense(num_task_types, activation='softmax'))
+    return model
+
+def create_lstm_model(input_shape, num_task_types):
+    model = Sequential()
+    #LSTM
+    model.add(LSTM(64, return_sequences=True))
+    model.add(Dropout(0.7))
+    model.add(LSTM(64))
+    model.add(Dropout(0.5))
+    model.add(Dense(num_task_types, activation='softmax'))
+    return model
+
+intra_train_path = "Intra/train/"
+intra_test_path = "Intra/test/"
+X_intra_train, y_intra_train = load_data(intra_train_path)
+X_intra_test, y_intra_test = load_data(intra_test_path)
+X_intra_train = np.transpose(X_intra_train, (0, 2, 1))
+X_intra_test = np.transpose(X_intra_test, (0, 2, 1))
+
+input_shape = (X_intra_train.shape[1], X_intra_train.shape[2], 1)
+
+intra_checkpoint_cnn = ModelCheckpoint("best_model.h5", save_best_only=True)
+intra_early_stopping_cnn = EarlyStopping(patience=10, restore_best_weights=True)
+intra_checkpoint_lstm = ModelCheckpoint("best_model.h5", save_best_only=True)
+intra_early_stopping_lstm = EarlyStopping(patience=10, restore_best_weights=True)
+
+cnn_model = create_cnn_model(input_shape, num_task_types=4)
+cnn_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+history_intra_cnn = cnn_model.fit(X_intra_train, y_intra_train, epochs=10, batch_size=16, validation_data=(X_intra_test, y_intra_test), callbacks=[intra_checkpoint_cnn, intra_early_stopping_cnn], verbose=1)
+
+lstm_model = create_lstm_model(input_shape, num_task_types=4)
+lstm_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+history_intra_lstm = lstm_model.fit(X_intra_train, y_intra_train, epochs=10, batch_size=16, validation_data=(X_intra_test, y_intra_test), callbacks=[intra_checkpoint_lstm, intra_early_stopping_lstm], verbose=1)
+
+
+cross_train_path = "Cross/train"
+cross_test_path = "Cross/test1"   #"Cross/test2" or "Cross/test3"
+X_cross_train, y_cross_train = load_data(cross_train_path)
+X_cross_test, y_cross_test = load_data(cross_test_path)
+X_cross_train = np.transpose(X_cross_train, (0, 2, 1))
+X_cross_test = np.transpose(X_cross_test, (0, 2, 1))
+
+input_shape = (X_cross_train.shape[1], X_cross_train.shape[2], 1)
+
+cross_checkpoint_cnn = ModelCheckpoint("best_model.h5", save_best_only=True)
+cross_early_stopping_cnn = EarlyStopping(patience=10, restore_best_weights=True)
+cross_checkpoint_lstm = ModelCheckpoint("best_model.h5", save_best_only=True)
+cross_early_stopping_lstm = EarlyStopping(patience=10, restore_best_weights=True)
+
+cnn_model = create_cnn_model(input_shape, num_task_types=4)
+cnn_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+history_cross_cnn = cnn_model.fit(X_cross_train, y_cross_train, epochs=10, batch_size=16, validation_data=(X_cross_test, y_cross_test), callbacks=[cross_checkpoint_cnn, cross_early_stopping_cnn], verbose=1)
+
+lstm_model = create_lstm_model(input_shape, num_task_types=4)
+lstm_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+history_cross_lstm = lstm_model.fit(X_cross_train, y_cross_train, epochs=10, batch_size=16, validation_data=(X_cross_test, y_cross_test), callbacks=[cross_checkpoint_lstm, cross_early_stopping_lstm], verbose=1)
+
+
+# Plotting training and validation loss
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(history_intra_cnn.history['loss'], label='Train Loss')
+plt.plot(history_intra_cnn.history['val_loss'], label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+# Plotting training and validation accuracy
+plt.subplot(1, 2, 2)
+plt.plot(history_intra_cnn.history['accuracy'], label='Train Accuracy')
+plt.plot(history_intra_cnn.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.savefig("intra_cnn.png") 
+
+# Plotting training and validation loss
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(history_intra_lstm.history['loss'], label='Train Loss')
+plt.plot(history_intra_lstm.history['val_loss'], label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+# Plotting training and validation accuracy
+plt.subplot(1, 2, 2)
+plt.plot(history_intra_lstm.history['accuracy'], label='Train Accuracy')
+plt.plot(history_intra_lstm.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.savefig("intra_lstm.png") 
+
+# Plotting training and validation loss
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(history_cross_cnn.history['loss'], label='Train Loss')
+plt.plot(history_cross_cnn.history['val_loss'], label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+# Plotting training and validation accuracy
+plt.subplot(1, 2, 2)
+plt.plot(history_cross_cnn.history['accuracy'], label='Train Accuracy')
+plt.plot(history_cross_cnn.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.savefig("cross_cnn.png") 
+
+# Plotting training and validation loss
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(history_cross_lstm.history['loss'], label='Train Loss')
+plt.plot(history_cross_lstm.history['val_loss'], label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+# Plotting training and validation accuracy
+plt.subplot(1, 2, 2)
+plt.plot(history_cross_lstm.history['accuracy'], label='Train Accuracy')
+plt.plot(history_cross_lstm.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.savefig("cross_lstm.png") 
