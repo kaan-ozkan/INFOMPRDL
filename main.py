@@ -135,7 +135,7 @@ plt.legend()
 
 plt.show()
 
-
+'''
 def create_cnn_model(input_shape, num_task_types):
     model = Sequential()
     #CNN
@@ -280,3 +280,4 @@ plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
 plt.legend()
 plt.savefig("cross_lstm.png") 
+'''
