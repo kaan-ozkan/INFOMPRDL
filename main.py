@@ -106,8 +106,40 @@ cross_checkpoint_cb = ModelCheckpoint("best_model.h5", save_best_only=True)
 cross_early_stopping_cb = EarlyStopping(patience=10, restore_best_weights=True)
 
 history_intra = cnn_rnn_model.fit(X_intra_train, y_intra_train, epochs=10,validation_data=(X_intra_test, y_intra_test), callbacks=[intra_checkpoint_cb, intra_early_stopping_cb], verbose=1)
-history_cross = cnn_rnn_model.fit(X_cross_train, y_cross_train, epochs=10, validation_data=(X_cross_test, y_cross_test), callbacks=[cross_checkpoint_cb, cross_early_stopping_cb], verbose=1)
-print("Done")
+print("Done INTRA")
+
+final_train_accuracy = history_intra.history['accuracy'][-1]
+final_val_accuracy = history_intra.history['val_accuracy'][-1]
+print(f"Final Training Accuracy: {final_train_accuracy * 100:.2f}%")
+print(f"Final Validation Accuracy: {final_val_accuracy * 100:.2f}%")
+
+# Plotting training and validation loss
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(history_intra.history['loss'], label='Train Loss')
+plt.plot(history_intra.history['val_loss'], label='Validation Loss')
+plt.title('Intra: Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+
+# Plotting training and validation accuracy
+plt.subplot(1, 2, 2)
+plt.plot(history_intra.history['accuracy'], label='Train Accuracy')
+plt.plot(history_intra.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Intra: Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+
+plt.show()
+
+print("starting CROSS")
+cnn_rnn_model_CROSS = create_cnn_rnn_model((X_cross_train.shape[0], X_cross_train.shape[1],X_cross_train.shape[2]), num_task_types=4)
+cnn_rnn_model_CROSS.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+history_cross = cnn_rnn_model_CROSS.fit(X_cross_train, y_cross_train, epochs=10, validation_data=(X_cross_test, y_cross_test), callbacks=[cross_checkpoint_cb, cross_early_stopping_cb], verbose=1)
+print("Done CROSS")
 
 final_train_accuracy = history_cross.history['accuracy'][-1]
 final_val_accuracy = history_cross.history['val_accuracy'][-1]
@@ -119,7 +151,7 @@ plt.figure(figsize=(12, 5))
 plt.subplot(1, 2, 1)
 plt.plot(history_cross.history['loss'], label='Train Loss')
 plt.plot(history_cross.history['val_loss'], label='Validation Loss')
-plt.title('Training and Validation Loss')
+plt.title('Cross: Training and Validation Loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
@@ -128,7 +160,7 @@ plt.legend()
 plt.subplot(1, 2, 2)
 plt.plot(history_cross.history['accuracy'], label='Train Accuracy')
 plt.plot(history_cross.history['val_accuracy'], label='Validation Accuracy')
-plt.title('Training and Validation Accuracy')
+plt.title('Cross: Training and Validation Accuracy')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
 plt.legend()
