@@ -52,22 +52,16 @@ def load_data(folder_path):
 def create_cnn_rnn_model(input_shape, num_task_types):
     model = Sequential()
 
-    # add CNN layers here?
-    
     model.add(Conv2D(16, (3, 3), activation='relu', input_shape=(1,248,8906), padding='same'))
-   
     model.add(MaxPooling2D((2, 2), padding='same'))
-  
     model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
-  
     model.add(MaxPooling2D((2, 2), padding='same'))
    
     #model.add(Flatten())
-
     model.summary()
-    time_step = 248
-    # LSTM wants [batch, timesteps, feature(vec?)]
-    model.add(Reshape(( 248, 8)))
+    
+    # LSTM wants [batch, timesteps, feature(vec)]
+    model.add(Reshape(( 16, 124)))
     model.summary()
     model.add(LSTM(32, return_sequences=True))
     model.add(Dropout(0.5))
