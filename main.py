@@ -35,7 +35,7 @@ def load_data(folder_path):
         if file_name.endswith('.h5'):
             file_path = os.path.join(folder_path, file_name)
             matrix = read_data(file_path)
-            matrix = signal.resample(matrix, 1000, axis=1)  # downsampling
+            matrix = signal.decimate(matrix, 4, axis=1)  # downsampling
             parts = file_name.split('.')
             label = parts[0].split('_')[-3]
             data.append(matrix)
@@ -53,18 +53,21 @@ def create_cnn_rnn_model(input_shape, num_task_types):
     model = Sequential()
 
     # add CNN layers here?
-    model.add(Conv2D(16, (3, 3), activation='relu', input_shape=input_shape))
+    model.add(Conv2D(32, (3, 3), activation='relu', input_shape=input_shape))
     model.add(MaxPooling2D((2, 2)))
-    model.add(Conv2D(32, (3, 3), activation='relu'))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
     model.add(MaxPooling2D((2, 2)))
     model.add(Flatten())
 
-    time_step = 248
+    time_step = 319
     # LSTM
+
     model.add(Reshape((time_step, -1)))
-    model.add(LSTM(32, return_sequences=True))
-    model.add(Dropout(0.5))
-    model.add(LSTM(16))
+    model.add(LSTM(64, return_sequences=True))
+    model.add(Dropout(0.7))
+    model.add(LSTM(64))
     model.add(Dropout(0.5))
     model.add(Dense(num_task_types, activation='softmax'))
     print("Model created")
@@ -81,7 +84,7 @@ cross_test_path = "Cross/test1"   # "Cross/test2" or "Cross/test3"
 X_cross_train, y_cross_train = load_data(cross_train_path)
 X_cross_test, y_cross_test = load_data(cross_test_path)
 
-# had to do that cause apparently the data before wasnt the right format for the LSTM
+# had to do that cause apparently the data before wasn't the right format for the LSTM
 X_cross_train = np.transpose(X_cross_train, (0, 2, 1))
 X_cross_test = np.transpose(X_cross_test, (0, 2, 1))
 X_intra_train = np.transpose(X_intra_train, (0, 2, 1))
@@ -91,13 +94,13 @@ input_shape_cnn = (X_intra_train.shape[1], X_intra_train.shape[2], 1)
 cnn_rnn_model = create_cnn_rnn_model(input_shape_cnn, num_task_types=4)
 cnn_rnn_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-intra_checkpoint_cb = ModelCheckpoint("best_model.h5", save_best_only=True)
+intra_checkpoint_cb = ModelCheckpoint("best_model_intra.h5", save_best_only=True)
 intra_early_stopping_cb = EarlyStopping(patience=10, restore_best_weights=True)
 
-cross_checkpoint_cb = ModelCheckpoint("best_model.h5", save_best_only=True)
+cross_checkpoint_cb = ModelCheckpoint("best_model_cross.h5", save_best_only=True)
 cross_early_stopping_cb = EarlyStopping(patience=10, restore_best_weights=True)
 
-history_intra = cnn_rnn_model.fit(X_intra_train, y_intra_train, epochs=10, batch_size=8, validation_data=(X_intra_test, y_intra_test), callbacks=[intra_checkpoint_cb, intra_early_stopping_cb], verbose=1)
+# history_intra = cnn_rnn_model.fit(X_intra_train, y_intra_train, epochs=10, batch_size=8, validation_data=(X_intra_test, y_intra_test), callbacks=[intra_checkpoint_cb, intra_early_stopping_cb], verbose=1)
 history_cross = cnn_rnn_model.fit(X_cross_train, y_cross_train, epochs=10, batch_size=8, validation_data=(X_cross_test, y_cross_test), callbacks=[cross_checkpoint_cb, cross_early_stopping_cb], verbose=1)
 print("Done")
 
